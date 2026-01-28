@@ -1,157 +1,161 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'dart:math' as math;
 
 class TaskPieChart extends StatelessWidget {
   final int completedTasks;
   final int inProgressTasks;
+  final int pendingTasks;
   final int highPriorityTasks;
   final int totalTasks;
 
   const TaskPieChart({
-    Key? key,
+    super.key,
     required this.completedTasks,
     required this.inProgressTasks,
-    required this.highPriorityTasks,
-    required this.totalTasks,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 200,
-      height: 200,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0xFFE2E8F0),
-            blurRadius: 12,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Pie chart
-          SizedBox(
-            width: 120,
-            height: 120,
-            child: CustomPaint(
-              painter: PieChartPainter(
-                completedTasks: completedTasks,
-                inProgressTasks: inProgressTasks,
-                highPriorityTasks: highPriorityTasks,
-                totalTasks: totalTasks,
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Legend
-          _buildLegendItem('Completed', completedTasks, const Color(0xFF10B981)),
-          _buildLegendItem('In Progress', inProgressTasks, const Color(0xFFF59E0B)),
-          _buildLegendItem('High Priority', highPriorityTasks, const Color(0xFFDC2626)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLegendItem(String label, int count, Color color) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 12,
-            height: 12,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            '$label: $count',
-            style: const TextStyle(
-              fontSize: 12,
-              color: Color(0xFF64748B),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class PieChartPainter extends CustomPainter {
-  final int completedTasks;
-  final int inProgressTasks;
-  final int highPriorityTasks;
-  final int totalTasks;
-
-  PieChartPainter({
-    required this.completedTasks,
-    required this.inProgressTasks,
+    required this.pendingTasks,
     required this.highPriorityTasks,
     required this.totalTasks,
   });
 
   @override
-  void paint(Canvas canvas, Size size) {
-    if (totalTasks == 0) return;
-
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = math.min(size.width, size.height) / 2 - 10;
-    
-    final paint = Paint()
-      ..style = PaintingStyle.fill;
-
-    double startAngle = -math.pi / 2; // Start from top
-
-    // Completed tasks (Green)
-    if (completedTasks > 0) {
-      final sweepAngle = (completedTasks / totalTasks) * 2 * math.pi;
-      paint.color = const Color(0xFF10B981);
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius),
-        startAngle,
-        sweepAngle,
-        true,
-        paint,
-      );
-      startAngle += sweepAngle;
-    }
-
-    // In Progress tasks (Yellow)
-    if (inProgressTasks > 0) {
-      final sweepAngle = (inProgressTasks / totalTasks) * 2 * math.pi;
-      paint.color = const Color(0xFFF59E0B);
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius),
-        startAngle,
-        sweepAngle,
-        true,
-        paint,
-      );
-      startAngle += sweepAngle;
-    }
-
-    // High Priority tasks (Red)
-    if (highPriorityTasks > 0) {
-      final sweepAngle = (highPriorityTasks / totalTasks) * 2 * math.pi;
-      paint.color = const Color(0xFFDC2626);
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius),
-        startAngle,
-        sweepAngle,
-        true,
-        paint,
-      );
-    }
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFFFF),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF000000).withOpacity(0.05),
+            offset: const Offset(0, 4),
+            blurRadius: 12,
+            spreadRadius: 0,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Task Status Overview",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: Color(0xFF333333),
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            "Distribution of tasks by status",
+            style: TextStyle(
+              fontWeight: FontWeight.normal,
+              fontSize: 14,
+              color: Color(0xFF757575),
+            ),
+          ),
+          const SizedBox(height: 24),
+          const SizedBox(height: 30),
+          Center(
+            child: SizedBox(
+              height: 180,
+              width: 180,
+              child: PieChart(
+                PieChartData(
+                  sectionsSpace: 2,
+                  centerSpaceRadius: 0,
+                  sections: _getSections(),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  List<PieChartSectionData> _getSections() {
+    // Fixed data as per design specification
+    const int pendingCount = 4;
+    const int inProgressCount = 1;
+    const int completedCount = 1;
+    const int total = pendingCount + inProgressCount + completedCount;
+
+    return [
+      // Pending - Amber
+      PieChartSectionData(
+        color: const Color(0xFFFFA000),
+        value: pendingCount.toDouble(),
+        title:
+            'Pending: $pendingCount (${(pendingCount / total * 100).round()}%)',
+        radius: 80,
+        titleStyle: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+          color: Color(0xFFFFA000),
+        ),
+        titlePositionPercentageOffset: 1.5,
+        showTitle: true,
+      ),
+      // In Progress - Blue
+      PieChartSectionData(
+        color: const Color(0xFF4285F4),
+        value: inProgressCount.toDouble(),
+        title:
+            'In Progress: $inProgressCount (${(inProgressCount / total * 100).round()}%)',
+        radius: 80,
+        titleStyle: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+          color: Color(0xFF4285F4),
+        ),
+        titlePositionPercentageOffset: 1.5,
+        showTitle: true,
+      ),
+      // Completed - Green
+      PieChartSectionData(
+        color: const Color(0xFF0F9D58),
+        value: completedCount.toDouble(),
+        title:
+            'Completed: $completedCount (${(completedCount / total * 100).round()}%)',
+        radius: 80,
+        titleStyle: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+          color: Color(0xFF0F9D58),
+        ),
+        titlePositionPercentageOffset: 1.5,
+        showTitle: true,
+      ),
+    ];
+  }
+
+  Widget _buildIconForSegment(int index) {
+    switch (index) {
+      case 0: // Pending
+        return const Icon(
+          Icons.hourglass_empty,
+          color: Color(0xFFFFA000),
+          size: 24,
+        );
+      case 1: // In Progress
+        return const Icon(
+          Icons.hourglass_top,
+          color: Color(0xFF4285F4),
+          size: 24,
+        );
+      case 2: // Completed
+        return const Icon(
+          Icons.check_circle,
+          color: Color(0xFF0F9D58),
+          size: 24,
+        );
+      default:
+        return const Icon(
+          Icons.help_outline,
+          color: Colors.grey,
+          size: 24,
+        );
+    }
+  }
 }

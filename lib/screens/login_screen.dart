@@ -248,8 +248,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: ElevatedButton(
                             onPressed: _login,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor:
-                                  const Color(0xFF4F46E5), // Vibrant Indigo Blue
+                              backgroundColor: const Color(
+                                  0xFF4F46E5), // Vibrant Indigo Blue
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),

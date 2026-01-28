@@ -102,12 +102,15 @@ class TaskList extends StatelessWidget {
                 IconButton(
                   icon: const Icon(Icons.edit,
                       color: Color(0xFF64748B)), // Pencil
-                  onPressed: () => onTaskTap(task), // This will open the edit screen
+                  onPressed: () =>
+                      onTaskTap(task), // This will open the edit screen
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete,
                       color: Color(0xFFEF4444)), // Trash
-                  onPressed: () => onDeleteTask != null ? onDeleteTask!(task) : null, // Call delete callback
+                  onPressed: () => onDeleteTask != null
+                      ? onDeleteTask!(task)
+                      : null, // Call delete callback
                 ),
                 const SizedBox(width: 8),
                 GestureDetector(
@@ -138,7 +141,8 @@ class TaskList extends StatelessWidget {
                 ),
               ],
             ),
-            onTap: () => onTaskToggle(task), // Now clicking the task toggles completion
+            onTap: () =>
+                onTaskToggle(task), // Now clicking the task toggles completion
           ),
         );
       },

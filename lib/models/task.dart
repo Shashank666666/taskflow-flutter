@@ -60,11 +60,33 @@ class Task {
 }
 
 class TaskPriorityMLModel {
-  static double calculateImportanceScore(Task task, {Map<String, int> userHistory = const {}}) {
+  static String calculatePriorityBasedOnTime(Task task) {
+    if (task.dueDate == null)
+      return 'Low'; // If no due date, default to low priority
+
+    final now = DateTime.now();
+    final difference = task.dueDate!.difference(now).inHours;
+
+    if (difference < 3) {
+      return 'High'; // Less than 3 hours: High priority
+    } else if (difference < 8) {
+      return 'Medium'; // Less than 8 hours: Medium priority
+    } else if (difference < 15) {
+      return 'Low'; // Less than 15 hours: Low priority
+    } else {
+      return 'Low'; // More than 15 hours: Low priority
+    }
+  }
+
+  static double calculateImportanceScore(Task task,
+      {Map<String, int> userHistory = const {}}) {
+    // Calculate priority based on time to due date
+    String timeBasedPriority = calculatePriorityBasedOnTime(task);
+
     // Base importance score based on priority (High=100, Medium=70, Low=30)
-    double priorityScore = task.priority == 'High' 
-      ? 100 
-      : (task.priority == 'Medium' ? 70 : 30);
+    double priorityScore = timeBasedPriority == 'High'
+        ? 100
+        : (timeBasedPriority == 'Medium' ? 70 : 30);
 
     // Due date urgency factor
     if (task.dueDate != null) {
@@ -82,7 +104,8 @@ class TaskPriorityMLModel {
     if (userHistory.containsKey(task.category)) {
       final categoryCount = userHistory[task.category] ?? 0;
       if (categoryCount > 5) {
-        priorityScore *= 1.2; // User frequently completes tasks in this category
+        priorityScore *=
+            1.2; // User frequently completes tasks in this category
       }
     }
 
@@ -101,7 +124,8 @@ class TaskPriorityMLModel {
     return priorityScore;
   }
 
-  static List<Task> getSmartUpcomingTasks(List<Task> allTasks, {Map<String, int> userHistory = const {}}) {
+  static List<Task> getSmartUpcomingTasks(List<Task> allTasks,
+      {Map<String, int> userHistory = const {}}) {
     // Filter out completed tasks
     final activeTasks = allTasks.where((task) => !task.isCompleted).toList();
 
@@ -110,43 +134,64 @@ class TaskPriorityMLModel {
       return [];
     }
 
-    // Calculate importance scores for all active tasks
-    final scoredTasks = activeTasks.map((task) {
-      return {
-        'task': task,
-        'score': calculateImportanceScore(task, userHistory: userHistory),
-      };
-    }).toList();
+    // Sort tasks by priority (High > Medium > Low) and then by due date
+    final sortedTasks = activeTasks
+      ..sort((a, b) {
+        // First sort by priority
+        int priorityComparison;
+        String aPriority = calculatePriorityBasedOnTime(a);
+        String bPriority = calculatePriorityBasedOnTime(b);
 
-    // Sort by importance score (descending)
-    scoredTasks.sort((a, b) => (b['score'] as double).compareTo(a['score'] as double));
+        if (aPriority == 'High' && bPriority != 'High') {
+          priorityComparison = -1;
+        } else if (aPriority != 'High' && bPriority == 'High') {
+          priorityComparison = 1;
+        } else if (aPriority == 'Medium' && bPriority == 'Low') {
+          priorityComparison = -1;
+        } else if (aPriority == 'Low' && bPriority == 'Medium') {
+          priorityComparison = 1;
+        } else {
+          priorityComparison = 0; // Same priority
+        }
+
+        // If priorities are the same, sort by due date (earlier first)
+        if (priorityComparison == 0) {
+          if (a.dueDate == null && b.dueDate == null) return 0;
+          if (a.dueDate == null) return 1;
+          if (b.dueDate == null) return -1;
+          return a.dueDate!.compareTo(b.dueDate!);
+        }
+
+        return priorityComparison;
+      });
 
     // Get high priority tasks first (max 3)
-    final highPriorityTasks = scoredTasks
-        .where((item) => (item['task'] as Task).priority == 'High')
+    final highPriorityTasks = sortedTasks
+        .where((task) => calculatePriorityBasedOnTime(task) == 'High')
         .take(3)
-        .map((item) => item['task'] as Task)
         .toList();
 
     // If we have fewer than 3 high priority tasks, fill with medium priority
     if (highPriorityTasks.length < 3) {
-      final mediumPriorityTasks = scoredTasks
-          .where((item) => (item['task'] as Task).priority == 'Medium')
+      final mediumPriorityTasks = sortedTasks
+          .where((task) =>
+              calculatePriorityBasedOnTime(task) == 'Medium' &&
+              !highPriorityTasks.contains(task))
           .take(3 - highPriorityTasks.length)
-          .map((item) => item['task'] as Task)
           .toList();
-      
+
       highPriorityTasks.addAll(mediumPriorityTasks);
     }
 
     // If we still have fewer than 3 tasks, fill with low priority
     if (highPriorityTasks.length < 3) {
-      final lowPriorityTasks = scoredTasks
-          .where((item) => (item['task'] as Task).priority == 'Low')
+      final lowPriorityTasks = sortedTasks
+          .where((task) =>
+              calculatePriorityBasedOnTime(task) == 'Low' &&
+              !highPriorityTasks.contains(task))
           .take(3 - highPriorityTasks.length)
-          .map((item) => item['task'] as Task)
           .toList();
-      
+
       highPriorityTasks.addAll(lowPriorityTasks);
     }
 

@@ -42,7 +42,8 @@ class TaskFlowApp extends StatelessWidget {
             borderSide: BorderSide(color: Color(0xFFE2E8F0)), // Soft Grey
           ),
           focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: Color(0xFF4F46E5)), // Vibrant Indigo Blue
+            borderSide:
+                BorderSide(color: Color(0xFF4F46E5)), // Vibrant Indigo Blue
           ),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
@@ -87,12 +88,12 @@ class _SplashScreenState extends State<SplashScreen> {
     if (isLoggedIn) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        MaterialPageRoute(builder: (context) => HomeScreen()),
       );
     } else {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        MaterialPageRoute(builder: (context) => LoginScreen()),
       );
     }
   }

@@ -3,6 +3,7 @@ import 'package:taskflow_flutter/models/task.dart';
 import 'package:taskflow_flutter/services/task_service.dart';
 import 'package:taskflow_flutter/screens/task_creation_screen.dart';
 import 'package:taskflow_flutter/widgets/task_list.dart';
+import 'package:taskflow_flutter/widgets/pie_chart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -86,24 +87,26 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Widget _buildDashboardScreen() {
     final completedTasks = tasks.where((task) => task.isCompleted).length;
     final inProgressTasks = tasks.where((task) => !task.isCompleted).length;
-    final highPriorityTasks = tasks.where((task) => task.priority == 'High').length;
-    final highPriorityCompleted = tasks.where((task) => task.priority == 'High' && task.isCompleted).length;
-    final highPriorityRemaining = highPriorityTasks - highPriorityCompleted;
+    final highPriorityTasks =
+        tasks.where((task) => task.priority == 'High').length;
+    final totalTasks = tasks.length;
 
     // Filter tasks for upcoming tasks - only high priority and completed status
     List<Task> filteredTasks = [];
     int highPriorityCount = 0;
-    
+
     for (var task in tasks) {
       if (highPriorityCount < 3 && task.priority == 'High') {
         filteredTasks.add(task);
         highPriorityCount++;
       }
     }
-    
+
     if (highPriorityCount < 3) {
       for (var task in tasks) {
-        if (highPriorityCount < 3 && !filteredTasks.contains(task) && task.isCompleted) {
+        if (highPriorityCount < 3 &&
+            !filteredTasks.contains(task) &&
+            task.isCompleted) {
           filteredTasks.add(task);
           highPriorityCount++;
         }
@@ -132,7 +135,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
               child: Row(
                 children: [
-                  Text("👋🏻", style: const TextStyle(fontSize: 24, color: Color(0xFFFFCC4D))),
+                  Text("👋🏻",
+                      style: const TextStyle(
+                          fontSize: 24, color: Color(0xFFFFCC4D))),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -161,37 +166,65 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
             ),
             const SizedBox(height: 24),
-            // Quick stats cards
-            GridView.count(
-              crossAxisCount: 3,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
+            // Pie chart section
+            Center(
+              child: TaskPieChart(
+                completedTasks: completedTasks,
+                inProgressTasks: inProgressTasks,
+                highPriorityTasks: highPriorityTasks,
+                totalTasks: totalTasks,
+              ),
+            ),
+            const SizedBox(height: 24),
+            // Stat boxes in horizontal layout
+            Row(
               children: [
-                _buildStatCard(
-                  'In Progress',
-                  '$inProgressTasks',
-                  Icons.schedule,
-                  const Color(0xFFF97316), // Amber-500 for Active status
-                  _handleInprogressSegment,
-                  isActive: _selectedSegment == 2, // 'In Progress' corresponds to segment 2
+                Expanded(
+                  child: _buildStatCard(
+                    'Completed',
+                    '$completedTasks',
+                    Icons.check_circle_outline,
+                    const Color(0xFF10B981), // Emerald-500
+                    _handleCompletedSegment,
+                    isActive: _selectedSegment == 1,
+                  ),
                 ),
-                _buildStatCard(
-                  'Completed',
-                  '$completedTasks',
-                  Icons.check_circle_outline,
-                  const Color(0xFF10B981), // Emerald-500
-                  _handleCompletedSegment,
-                  isActive: _selectedSegment == 1, // 'Completed' corresponds to segment 1
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildStatCard(
+                    'Ongoing',
+                    '$inProgressTasks',
+                    Icons.schedule,
+                    const Color(0xFFF59E0B), // Amber-500
+                    _handleInprogressSegment,
+                    isActive: _selectedSegment == 2,
+                  ),
                 ),
-                _buildStatCard(
-                  'High Priority',
-                  '$highPriorityRemaining',
-                  Icons.error_outline,
-                  const Color(0xFFDC2626), // Red-600 for High Priority (Inactive tasks)
-                  _handlePrioritySegment,
-                  isActive: _selectedSegment == 0, // 'Priority' corresponds to segment 0
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatCard(
+                    'High Priority',
+                    '$highPriorityTasks',
+                    Icons.error_outline,
+                    const Color(0xFFDC2626), // Red-600
+                    _handlePrioritySegment,
+                    isActive: _selectedSegment == 0,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildStatCard(
+                    'In Progress',
+                    '$inProgressTasks',
+                    Icons.play_circle_outline,
+                    const Color(0xFF3B82F6), // Blue-500
+                    _handleInprogressSegment,
+                    isActive: _selectedSegment == 2,
+                  ),
                 ),
               ],
             ),
@@ -471,7 +504,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text("👋🏻", style: const TextStyle(fontSize: 48, color: Color(0xFFFFCC4D))),
+          Text("👋🏻",
+              style: const TextStyle(fontSize: 48, color: Color(0xFFFFCC4D))),
           const SizedBox(height: 16),
           const Text(
             'No upcoming tasks',

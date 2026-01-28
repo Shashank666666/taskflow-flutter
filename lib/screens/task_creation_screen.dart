@@ -5,7 +5,8 @@ class TaskCreationScreen extends StatefulWidget {
   final Function(Task) onSave;
   final Task? initialTask; // Optional initial task for editing
 
-  const TaskCreationScreen({Key? key, required this.onSave, this.initialTask}) : super(key: key);
+  const TaskCreationScreen({Key? key, required this.onSave, this.initialTask})
+      : super(key: key);
 
   @override
   _TaskCreationScreenState createState() => _TaskCreationScreenState();
@@ -26,20 +27,23 @@ class _TaskCreationScreenState extends State<TaskCreationScreen> {
     // Initialize controllers and values based on initialTask if provided
     if (widget.initialTask != null) {
       _titleController = TextEditingController(text: widget.initialTask!.title);
-      _descriptionController = TextEditingController(text: widget.initialTask!.description);
+      _descriptionController =
+          TextEditingController(text: widget.initialTask!.description);
       _priority = widget.initialTask!.priority;
       _category = widget.initialTask!.category;
       _dueDate = widget.initialTask!.dueDate;
-      _dueTime = _dueDate != null 
-          ? TimeOfDay.fromDateTime(_dueDate!) 
+      _dueTime = _dueDate != null
+          ? TimeOfDay.fromDateTime(_dueDate!)
           : TimeOfDay.now();
     } else {
       _titleController = TextEditingController();
       _descriptionController = TextEditingController();
       _priority = 'Medium';
       _category = 'Personal';
-      _dueDate = DateTime.now().add(const Duration(days: 1)); // Default to tomorrow
-      _dueTime = const TimeOfDay(hour: 9, minute: 0); // Default to 9 AM
+      // Default to current date and time
+      DateTime now = DateTime.now();
+      _dueDate = now;
+      _dueTime = TimeOfDay.fromDateTime(now);
     }
   }
 
@@ -54,22 +58,75 @@ class _TaskCreationScreenState extends State<TaskCreationScreen> {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _dueDate ?? DateTime.now(),
-      firstDate: DateTime.now(),
+      firstDate: DateTime.now(), // Only allow selecting today and future dates
       lastDate: DateTime(2101),
     );
     if (picked != null && picked != _dueDate) {
       setState(() {
         _dueDate = picked;
       });
+      // If the selected date is today and the time is in the past, reset time to current
+      if (_dueDate != null && _dueTime != null) {
+        DateTime combinedDateTime = DateTime(
+          _dueDate!.year,
+          _dueDate!.month,
+          _dueDate!.day,
+          _dueTime!.hour,
+          _dueTime!.minute,
+        );
+        if (combinedDateTime.isBefore(DateTime.now())) {
+          DateTime now = DateTime.now();
+          _dueTime = TimeOfDay.fromDateTime(now);
+        }
+      }
     }
   }
 
   Future<void> _selectDueTime() async {
+    TimeOfDay initialTime = _dueTime ?? TimeOfDay.now();
+
+    // Check if the selected date is today, and if so, adjust initial time to prevent past times
+    if (_dueDate != null &&
+        _dueDate!.day == DateTime.now().day &&
+        _dueDate!.month == DateTime.now().month &&
+        _dueDate!.year == DateTime.now().year) {
+      TimeOfDay currentTime = TimeOfDay.fromDateTime(DateTime.now());
+      // If the current selected time is before current time, use current time
+      if (_dueTime != null && _dueTime!.hour < currentTime.hour ||
+          (_dueTime!.hour == currentTime.hour &&
+              _dueTime!.minute < currentTime.minute)) {
+        initialTime = currentTime;
+      }
+    }
+
     final TimeOfDay? picked = await showTimePicker(
       context: context,
-      initialTime: _dueTime ?? TimeOfDay.now(),
+      initialTime: initialTime,
     );
     if (picked != null && picked != _dueTime) {
+      // Check if the selected date is today and the selected time is in the past
+      if (_dueDate != null &&
+          _dueDate!.day == DateTime.now().day &&
+          _dueDate!.month == DateTime.now().month &&
+          _dueDate!.year == DateTime.now().year) {
+        DateTime selectedDateTime = DateTime(
+          _dueDate!.year,
+          _dueDate!.month,
+          _dueDate!.day,
+          picked.hour,
+          picked.minute,
+        );
+        if (selectedDateTime.isBefore(DateTime.now())) {
+          // Show snackbar to inform user that past time cannot be selected
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Cannot select a time that has already passed'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return; // Don't update the time
+        }
+      }
       setState(() {
         _dueTime = picked;
       });
@@ -94,14 +151,19 @@ class _TaskCreationScreenState extends State<TaskCreationScreen> {
       String calculatedPriority = _calculatePriority(combinedDateTime);
 
       final task = Task(
-        id: widget.initialTask?.id ?? DateTime.now().millisecondsSinceEpoch.toString(), // Keep original ID when editing
+        id: widget.initialTask?.id ??
+            DateTime.now()
+                .millisecondsSinceEpoch
+                .toString(), // Keep original ID when editing
         title: _titleController.text,
         description: _descriptionController.text,
         dueDate: combinedDateTime, // Use combined date and time
         priority: calculatedPriority, // Use ML-calculated priority
         category: _category,
-        isCompleted: widget.initialTask?.isCompleted ?? false, // Preserve completion status
-        createdAt: widget.initialTask?.createdAt ?? DateTime.now(), // Keep original creation date when editing
+        isCompleted: widget.initialTask?.isCompleted ??
+            false, // Preserve completion status
+        createdAt: widget.initialTask?.createdAt ??
+            DateTime.now(), // Keep original creation date when editing
         updatedAt: DateTime.now(), // Update the timestamp
       );
       widget.onSave(task);
@@ -119,8 +181,10 @@ class _TaskCreationScreenState extends State<TaskCreationScreen> {
 
     if (hoursUntilDue < 3) {
       return 'High';
-    } else if (hoursUntilDue < 10) {
+    } else if (hoursUntilDue < 8) {
       return 'Medium';
+    } else if (hoursUntilDue < 15) {
+      return 'Low';
     } else {
       return 'Low';
     }
@@ -130,7 +194,9 @@ class _TaskCreationScreenState extends State<TaskCreationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: widget.initialTask != null ? const Text('Edit Task') : const Text('Create New Task'),
+        title: widget.initialTask != null
+            ? const Text('Edit Task')
+            : const Text('Create New Task'),
         backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: Colors.white,
       ),
@@ -198,7 +264,8 @@ class _TaskCreationScreenState extends State<TaskCreationScreen> {
                             child: ListTile(
                               title: const Text('Due Date'),
                               subtitle: _dueDate != null
-                                  ? Text('${_dueDate!.day}/${_dueDate!.month}/${_dueDate!.year}')
+                                  ? Text(
+                                      '${_dueDate!.day}/${_dueDate!.month}/${_dueDate!.year}')
                                   : const Text('Select date'),
                               trailing: const Icon(Icons.calendar_today),
                               onTap: _selectDueDate,

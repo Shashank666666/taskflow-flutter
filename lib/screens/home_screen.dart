@@ -289,7 +289,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 child: Row(
                   children: [
                     const Text("👋🏻",
-                        style: TextStyle(fontSize: 24, color: Color(0xFFFFCC4D))),
+                        style:
+                            TextStyle(fontSize: 24, color: Color(0xFFFFCC4D))),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -451,7 +452,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 )
               else
                 Column(
-                  children: allUpcomingTasksWithin7Days.map((task) => _buildUpcomingDueTaskCard(task)).toList(),
+                  children: allUpcomingTasksWithin7Days
+                      .map((task) => _buildUpcomingDueTaskCard(task))
+                      .toList(),
                 ),
             ],
           ),

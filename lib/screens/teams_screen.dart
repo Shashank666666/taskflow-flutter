@@ -69,7 +69,7 @@ class _TeamsScreenState extends State<TeamsScreen> {
     final prefs = await SharedPreferences.getInstance();
     final teamsJson = prefs.getString('teams') ?? '[]';
     final List<dynamic> teamsList = json.decode(teamsJson);
-    
+
     setState(() {
       _teams = teamsList.map((json) => Team.fromJson(json)).toList();
       _isLoading = false;
@@ -80,7 +80,7 @@ class _TeamsScreenState extends State<TeamsScreen> {
     final prefs = await SharedPreferences.getInstance();
     final tasksJson = prefs.getString('tasks') ?? '[]';
     final List<dynamic> tasksList = json.decode(tasksJson);
-    
+
     setState(() {
       _tasks = tasksList.map((json) => Task.fromJson(json)).toList();
     });
@@ -158,7 +158,8 @@ class _TeamsScreenState extends State<TeamsScreen> {
 
   Widget _buildTeamCard(Team team) {
     // Calculate team statistics
-    int totalTasks = _tasks.where((task) => team.taskIds.contains(task.id)).length;
+    int totalTasks =
+        _tasks.where((task) => team.taskIds.contains(task.id)).length;
     int completedTasks = _tasks
         .where((task) => team.taskIds.contains(task.id) && task.isCompleted)
         .length;
@@ -212,7 +213,8 @@ class _TeamsScreenState extends State<TeamsScreen> {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: const Color(0xFF6366F1).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
@@ -246,9 +248,11 @@ class _TeamsScreenState extends State<TeamsScreen> {
               // Task statistics
               Row(
                 children: [
-                  _buildStatItem('Tasks', totalTasks.toString(), const Color(0xFF6366F1)),
+                  _buildStatItem(
+                      'Tasks', totalTasks.toString(), const Color(0xFF6366F1)),
                   const SizedBox(width: 16),
-                  _buildStatItem('Completed', completedTasks.toString(), const Color(0xFF10B981)),
+                  _buildStatItem('Completed', completedTasks.toString(),
+                      const Color(0xFF10B981)),
                   const SizedBox(width: 16),
                   _buildStatItem(
                     'Progress',
@@ -345,13 +349,13 @@ class _TeamsScreenState extends State<TeamsScreen> {
 
   void _searchTeams(String query) {
     if (query.isEmpty) return;
-    
+
     final filteredTeams = _teams
-        .where((team) => 
+        .where((team) =>
             team.name.toLowerCase().contains(query.toLowerCase()) ||
             team.description.toLowerCase().contains(query.toLowerCase()))
         .toList();
-    
+
     if (filteredTeams.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No teams found')),
@@ -474,7 +478,7 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
     teamTasks = widget.allTasks
         .where((task) => widget.team.taskIds.contains(task.id))
         .toList();
-    
+
     // Calculate completion percentage
     if (teamTasks.isEmpty) {
       completionPercentage = 0.0;
@@ -608,7 +612,8 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
                       backgroundColor: const Color(0xFFE2E8F0),
                       valueColor: AlwaysStoppedAnimation<Color>(
                         completionPercentage >= 80
-                            ? const Color(0xFF10B981) // Green for high completion
+                            ? const Color(
+                                0xFF10B981) // Green for high completion
                             : completionPercentage >= 50
                                 ? const Color(0xFFF59E0B) // Yellow for medium
                                 : const Color(0xFFEF4444), // Red for low
@@ -629,9 +634,16 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildStatCard('Total Tasks', '${teamTasks.length}', const Color(0xFF6366F1)),
-                      _buildStatCard('Completed', '${teamTasks.where((task) => task.isCompleted).length}', const Color(0xFF10B981)),
-                      _buildStatCard('Pending', '${teamTasks.where((task) => !task.isCompleted).length}', const Color(0xFFF59E0B)),
+                      _buildStatCard('Total Tasks', '${teamTasks.length}',
+                          const Color(0xFF6366F1)),
+                      _buildStatCard(
+                          'Completed',
+                          '${teamTasks.where((task) => task.isCompleted).length}',
+                          const Color(0xFF10B981)),
+                      _buildStatCard(
+                          'Pending',
+                          '${teamTasks.where((task) => !task.isCompleted).length}',
+                          const Color(0xFFF59E0B)),
                     ],
                   ),
                 ],
@@ -669,7 +681,8 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.qr_code, color: Color(0xFF6366F1)),
+                        icon:
+                            const Icon(Icons.qr_code, color: Color(0xFF6366F1)),
                         onPressed: () => _showQRCodeScanner(context),
                       ),
                     ],
@@ -689,7 +702,9 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
                     Wrap(
                       spacing: 12,
                       runSpacing: 12,
-                      children: widget.team.members.map((member) => _buildMemberCard(member)).toList(),
+                      children: widget.team.members
+                          .map((member) => _buildMemberCard(member))
+                          .toList(),
                     ),
                 ],
               ),
@@ -744,7 +759,9 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
                     )
                   else
                     Column(
-                      children: teamTasks.map((task) => _buildTaskCard(task)).toList(),
+                      children: teamTasks
+                          .map((task) => _buildTaskCard(task))
+                          .toList(),
                     ),
                 ],
               ),
@@ -835,7 +852,9 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
         color: const Color(0xFFF8F9FB),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: task.isCompleted ? const Color(0xFF10B981) : const Color(0xFFE2E8F0),
+          color: task.isCompleted
+              ? const Color(0xFF10B981)
+              : const Color(0xFFE2E8F0),
           width: 1,
         ),
       ),
@@ -846,7 +865,9 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
             width: 12,
             height: 12,
             decoration: BoxDecoration(
-              color: task.isCompleted ? const Color(0xFF10B981) : const Color(0xFFCBD5E1),
+              color: task.isCompleted
+                  ? const Color(0xFF10B981)
+                  : const Color(0xFFCBD5E1),
               shape: BoxShape.circle,
             ),
           ),
@@ -860,8 +881,11 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
                   task.title,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: task.isCompleted ? const Color(0xFF94A3B8) : const Color(0xFF1E293B),
-                    decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+                    color: task.isCompleted
+                        ? const Color(0xFF94A3B8)
+                        : const Color(0xFF1E293B),
+                    decoration:
+                        task.isCompleted ? TextDecoration.lineThrough : null,
                   ),
                 ),
                 if (task.description.isNotEmpty) ...[
@@ -880,9 +904,11 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: _getPriorityColor(task.priority).withOpacity(0.1),
+                        color:
+                            _getPriorityColor(task.priority).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
@@ -975,7 +1001,9 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
               // TODO: Implement actual QR code scanning functionality
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('QR Code scanning would be implemented here')),
+                const SnackBar(
+                    content:
+                        Text('QR Code scanning would be implemented here')),
               );
             },
             child: const Text('Scan QR'),

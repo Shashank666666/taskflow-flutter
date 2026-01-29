@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -14,6 +16,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _role = 'Administrator';
   bool _notificationsEnabled = true;
   bool _darkModeEnabled = false;
+
+  // Insights data
+  int _completedTasks = 45;
+  int _currentStreak = 7;
+  int _teamsJoined = 3;
 
   @override
   Widget build(BuildContext context) {
@@ -116,6 +123,84 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
 
               const SizedBox(height: 32),
+
+              // Insights Section
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: const Color(0xFFE2E8F0),
+                    width: 1,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.insights,
+                          color: const Color(0xFF6366F1),
+                          size: 24,
+                        ),
+                        const SizedBox(width: 12),
+                        const Text(
+                          'Insights & Achievements',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Completion Statistics Grid
+                    Row(
+                      children: [
+                        _buildInsightCard(
+                            'Tasks Completed',
+                            _completedTasks.toString(),
+                            const Color(0xFF10B981)),
+                        const SizedBox(width: 16),
+                        _buildInsightCard(
+                            'Success Rate',
+                            '${_calculateSuccessRate().toStringAsFixed(0)}%',
+                            const Color(0xFF6366F1)),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        _buildInsightCard('Current Streak',
+                            '$_currentStreak days', const Color(0xFFF59E0B)),
+                        const SizedBox(width: 16),
+                        _buildInsightCard('Teams Joined',
+                            _teamsJoined.toString(), const Color(0xFF8B5CF6)),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Achievement Badges
+                    const Text(
+                      'Recent Achievements',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1E293B),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildAchievementBadges(),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
 
               // Settings section
               const Text(
@@ -319,6 +404,93 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Widget _buildInsightCard(String title, String value, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Color(0xFF6B7280),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  double _calculateSuccessRate() {
+    // Placeholder logic for success rate calculation
+    return 90.0;
+  }
+
+  Widget _buildAchievementBadges() {
+    return Row(
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          margin: const EdgeInsets.only(right: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFFEAB308),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(
+            Icons.star,
+            color: Colors.white,
+            size: 24,
+          ),
+        ),
+        Container(
+          width: 40,
+          height: 40,
+          margin: const EdgeInsets.only(right: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFF10B981),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(
+            Icons.workspace_premium,
+            color: Colors.white,
+            size: 24,
+          ),
+        ),
+        Container(
+          width: 40,
+          height: 40,
+          margin: const EdgeInsets.only(right: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFFEC4899),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(
+            Icons.local_fire_department,
+            color: Colors.white,
+            size: 24,
+          ),
+        ),
+      ],
+    );
+  }
+
   void _showChangePasswordDialog() {
     showDialog(
       context: context,
@@ -393,8 +565,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             ElevatedButton(
               onPressed: () {
-                // TODO: Implement logout
-                Navigator.of(context).pop();
+                _performLogout();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFEF4444),
@@ -406,5 +577,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       },
     );
+  }
+
+  void _performLogout() async {
+    try {
+      // Clear login status from shared preferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isLoggedIn', false);
+      await prefs.remove('currentUser');
+
+      // Navigate to login screen and remove all previous routes
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        (route) => false,
+      );
+
+      // Show success message
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Logged out successfully'),
+            backgroundColor: Color(0xFF10B981),
+          ),
+        );
+      }
+    } catch (e) {
+      // Handle any errors
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error logging out. Please try again.'),
+            backgroundColor: Color(0xFFEF4444),
+          ),
+        );
+      }
+    }
   }
 }

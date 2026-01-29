@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import '../models/task.dart';
 
 class TaskPieChart extends StatelessWidget {
   final int completedTasks;
@@ -7,6 +8,7 @@ class TaskPieChart extends StatelessWidget {
   final int pendingTasks;
   final int highPriorityTasks;
   final int totalTasks;
+  final List<Task> tasks;
 
   const TaskPieChart({
     super.key,
@@ -15,6 +17,7 @@ class TaskPieChart extends StatelessWidget {
     required this.pendingTasks,
     required this.highPriorityTasks,
     required this.totalTasks,
+    required this.tasks,
   });
 
   @override
@@ -55,11 +58,11 @@ class TaskPieChart extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          const SizedBox(height: 30),
+          const SizedBox(height: 10),
           Center(
             child: SizedBox(
-              height: 180,
-              width: 180,
+              height: 220,
+              width: 220,
               child: PieChart(
                 PieChartData(
                   sectionsSpace: 2,
@@ -75,58 +78,84 @@ class TaskPieChart extends StatelessWidget {
   }
 
   List<PieChartSectionData> _getSections() {
-    // Fixed data as per design specification
-    const int pendingCount = 4;
-    const int inProgressCount = 1;
-    const int completedCount = 1;
-    const int total = pendingCount + inProgressCount + completedCount;
+    // Use dynamic data from widget parameters
+    final int highPriorityCount = highPriorityTasks;
+    final int mediumPriorityCount = tasks
+        .where((task) =>
+            task != null && !task.isCompleted && task.priority == 'Medium')
+        .length;
+    final int lowPriorityCount = tasks
+        .where((task) =>
+            task != null && !task.isCompleted && task.priority == 'Low')
+        .length;
+    final int completedCount = completedTasks;
+    final int total = totalTasks > 0 ? totalTasks : 1; // Avoid division by zero
 
     return [
-      // Pending - Amber
-      PieChartSectionData(
-        color: const Color(0xFFFFA000),
-        value: pendingCount.toDouble(),
-        title:
-            'Pending: $pendingCount (${(pendingCount / total * 100).round()}%)',
-        radius: 80,
-        titleStyle: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
-          color: Color(0xFFFFA000),
+      // High Priority - Red
+      if (highPriorityCount > 0)
+        PieChartSectionData(
+          color: const Color(0xFFEF4444),
+          value: highPriorityCount.toDouble(),
+          title:
+              'High Priority\n${highPriorityCount}\n(${(highPriorityCount / total * 100).round()}%)',
+          radius: 60,
+          titleStyle: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+          titlePositionPercentageOffset: 0.7,
+          showTitle: true,
         ),
-        titlePositionPercentageOffset: 1.5,
-        showTitle: true,
-      ),
-      // In Progress - Blue
-      PieChartSectionData(
-        color: const Color(0xFF4285F4),
-        value: inProgressCount.toDouble(),
-        title:
-            'In Progress: $inProgressCount (${(inProgressCount / total * 100).round()}%)',
-        radius: 80,
-        titleStyle: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
-          color: Color(0xFF4285F4),
+      // Medium Priority - Blue
+      if (mediumPriorityCount > 0)
+        PieChartSectionData(
+          color: const Color(0xFF3B82F6),
+          value: mediumPriorityCount.toDouble(),
+          title:
+              'Medium\n${mediumPriorityCount}\n(${(mediumPriorityCount / total * 100).round()}%)',
+          radius: 60,
+          titleStyle: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+          titlePositionPercentageOffset: 0.7,
+          showTitle: true,
         ),
-        titlePositionPercentageOffset: 1.5,
-        showTitle: true,
-      ),
+      // Low Priority - Amber
+      if (lowPriorityCount > 0)
+        PieChartSectionData(
+          color: const Color(0xFFF59E0B),
+          value: lowPriorityCount.toDouble(),
+          title:
+              'Low\n${lowPriorityCount}\n(${(lowPriorityCount / total * 100).round()}%)',
+          radius: 60,
+          titleStyle: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+          titlePositionPercentageOffset: 0.7,
+          showTitle: true,
+        ),
       // Completed - Green
-      PieChartSectionData(
-        color: const Color(0xFF0F9D58),
-        value: completedCount.toDouble(),
-        title:
-            'Completed: $completedCount (${(completedCount / total * 100).round()}%)',
-        radius: 80,
-        titleStyle: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
-          color: Color(0xFF0F9D58),
+      if (completedCount > 0)
+        PieChartSectionData(
+          color: const Color(0xFF10B981),
+          value: completedCount.toDouble(),
+          title:
+              'Completed\n${completedCount}\n(${(completedCount / total * 100).round()}%)',
+          radius: 60,
+          titleStyle: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+          titlePositionPercentageOffset: 0.7,
+          showTitle: true,
         ),
-        titlePositionPercentageOffset: 1.5,
-        showTitle: true,
-      ),
     ];
   }
 

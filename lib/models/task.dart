@@ -61,8 +61,9 @@ class Task {
 
 class TaskPriorityMLModel {
   static String calculatePriorityBasedOnTime(Task task) {
-    if (task.dueDate == null)
+    if (task.dueDate == null) {
       return 'Low'; // If no due date, default to low priority
+    }
 
     final now = DateTime.now();
     final difference = task.dueDate!.difference(now).inHours;

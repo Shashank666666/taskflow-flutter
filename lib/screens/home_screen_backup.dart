@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:taskflow_flutter/models/task.dart';
 import 'package:taskflow_flutter/services/task_service.dart';
 import 'package:taskflow_flutter/screens/task_creation_screen.dart';
-import 'package:taskflow_flutter/screens/teams_screen.dart';
-import 'package:taskflow_flutter/screens/profile_screen.dart';
 import 'package:taskflow_flutter/widgets/task_list.dart';
 import 'package:taskflow_flutter/widgets/pie_chart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -258,203 +256,410 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     // Take only the first 3 tasks
     List<Task> filteredTasks = allFilteredTasks.take(3).toList();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dashboard'),
-        backgroundColor: const Color(0xFF6366F1),
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 20),
-              // Welcome section with waving hand emoji
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // App Header - similar to task screen header
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF6366F1), // Indigo background
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Dashboard',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.notifications,
+                            color: Colors.white),
+                        onPressed: () {
+                          // TODO: Implement notifications
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      CircleAvatar(
+                        radius: 16,
+                        backgroundColor: Colors.white.withOpacity(0.2),
+                        child: Text(
+                          _userName.isNotEmpty
+                              ? _userName.substring(0, 1).toUpperCase()
+                              : 'U',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Welcome section with waving hand emoji
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x1A000000),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  const Text("👋🏻",
+                      style: TextStyle(fontSize: 24, color: Color(0xFFFFCC4D))),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Welcome back, ${_userName.split(' ').first}!',
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1A1A1A),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Here\'s what\'s happening with your tasks today.',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w400,
+                            color: Color(0xFF616161),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            // Pie chart section
+            Center(
+              child: TaskPieChart(
+                completedTasks: completedTasks,
+                inProgressTasks: inProgressTasks,
+                pendingTasks: pendingTasks,
+                highPriorityTasks: highPriorityTasks,
+                totalTasks: totalTasks,
+                tasks: tasks,
+              ),
+            ),
+            const SizedBox(height: 24),
+            // Stat boxes in horizontal layout
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatCard(
+                    'Total Tasks',
+                    '$totalTasks',
+                    Icons.check_circle_outline,
+                    const Color(0xFF3F51B5), // Indigo-500
+                    _handleCompletedSegment,
+                    isActive: _selectedSegment == 1,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildStatCard(
+                    'Completed',
+                    '$completedTasks',
+                    Icons.check_circle,
+                    const Color(0xFF2E7D32), // Green-800
+                    _handleInprogressSegment,
+                    isActive: _selectedSegment == 2,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatCard(
+                    'In Progress',
+                    '$inProgressTasks',
+                    Icons.access_time,
+                    const Color(0xFFFBC02D), // Yellow-700
+                    _handlePrioritySegment,
+                    isActive: _selectedSegment == 0,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildStatCard(
+                    'High Priority',
+                    '$highPriorityTasks',
+                    Icons.error_outline,
+                    const Color(0xFFD32F2F), // Red-700
+                    _handleInprogressSegment,
+                    isActive: _selectedSegment == 2,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            // Upcoming tasks section
+            if (allUpcomingTasksWithin7Days.isEmpty)
+              _buildNoTasksPlaceholder() // No upcoming tasks at all
+            else if (allUpcomingTasksWithin7Days
+                .every((task) => task.isCompleted))
+              // All upcoming tasks are completed
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x1A000000),
-                      blurRadius: 8,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
+                  color: const Color(0xFFFFFFFF), // White
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: const Color(0xFFE0E0E0), // 1px solid #E0E0E0
+                    width: 1,
+                  ),
                 ),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("👋🏻",
-                        style: TextStyle(fontSize: 24, color: Color(0xFFFFCC4D))),
-                    const SizedBox(width: 12),
-                    Expanded(
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Upcoming Due Tasks',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700, // Bold (700)
+                                color: const Color(0xFF1A1A1A),
+                              ),
+                            ),
+                            Text(
+                              'Tasks due within the next 7 days (sorted by priority)',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w400, // Regular (400)
+                                color: const Color(0xFF757575),
+                              ),
+                            ),
+                          ],
+                        ),
+                        IconButton(
+                          icon: Icon(
+                            Icons.trending_up,
+                            color: const Color(
+                                0xFF6366F1), // Purple/Blue trend icon
+                            size: 24,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _currentIndex = 1; // Switch to Tasks screen
+                            });
+                          },
+                          style: IconButton.styleFrom(
+                            foregroundColor: const Color(0xFF6366F1),
+                            hoverColor:
+                                const Color(0xFF6366F1).withOpacity(0.1),
+                            focusColor:
+                                const Color(0xFF6366F1).withOpacity(0.2),
+                            highlightColor:
+                                const Color(0xFF6366F1).withOpacity(0.2),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      height: 200,
+                      width: double.infinity,
+                      color: Colors.white, // White background
+                      alignment: Alignment.center,
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
+                          Icon(
+                            Icons.check_circle,
+                            size: 60,
+                            color: Color(0xFF10B981), // Emerald green
+                          ),
+                          SizedBox(height: 16),
                           Text(
-                            'Welcome back, ${_userName.split(' ').first}!',
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w700,
+                            'All Caught Up!',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
                               color: Color(0xFF1A1A1A),
                             ),
+                            textAlign: TextAlign.center,
                           ),
-                          const SizedBox(height: 4),
-                          const Text(
-                            'Here\'s what\'s happening with your tasks today.',
+                          SizedBox(height: 8),
+                          Text(
+                            'Great job! You have completed all upcoming tasks.',
                             style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w400,
-                              color: Color(0xFF616161),
+                              fontSize: 14,
+                              color: Color(0xFF757575),
                             ),
+                            textAlign: TextAlign.center,
+                          ),
+                          SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () {
+                              // Directly open the add task interface
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      TaskCreationScreen(onSave: _addTask),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF6366F1),
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text('Add a New Task'),
                           ),
                         ],
                       ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 24),
-              // Pie chart section
-              Center(
-                child: TaskPieChart(
-                  completedTasks: completedTasks,
-                  inProgressTasks: inProgressTasks,
-                  pendingTasks: pendingTasks,
-                  highPriorityTasks: highPriorityTasks,
-                  totalTasks: totalTasks,
-                  tasks: tasks,
+              )
+            else
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFFFFF), // White
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: const Color(0xFFE0E0E0), // 1px solid #E0E0E0
+                    width: 1,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Upcoming Due Tasks',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700, // Bold (700)
+                                color: const Color(0xFF1A1A1A),
+                              ),
+                            ),
+                            Text(
+                              'Tasks due within the next 7 days (sorted by priority)',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w400, // Regular (400)
+                                color: const Color(0xFF757575),
+                              ),
+                            ),
+                          ],
+                        ),
+                        IconButton(
+                          icon: Icon(
+                            Icons.trending_up,
+                            color: const Color(
+                                0xFF6366F1), // Purple/Blue trend icon
+                            size: 24,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _currentIndex = 1; // Switch to Tasks screen
+                            });
+                          },
+                          style: IconButton.styleFrom(
+                            foregroundColor: const Color(0xFF6366F1),
+                            hoverColor:
+                                const Color(0xFF6366F1).withOpacity(0.1),
+                            focusColor:
+                                const Color(0xFF6366F1).withOpacity(0.2),
+                            highlightColor:
+                                const Color(0xFF6366F1).withOpacity(0.2),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    // Check if all upcoming tasks (within 7 days) are completed
+                    if (allUpcomingTasksWithin7Days.isEmpty ||
+                        allUpcomingTasksWithin7Days
+                            .every((task) => task.isCompleted))
+                      Container(
+                        height: 120,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFAFAFA),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: const Color(0xFFE0E0E0),
+                            width: 1,
+                          ),
+                        ),
+                        child: const Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.check_circle,
+                              size: 32,
+                              color: Color(0xFF10B981),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'All Caught Up!',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF1A1A1A),
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'Great job! You have completed all upcoming tasks.',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF757575),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      ...filteredTasks
+                          .take(3)
+                          .map((task) => _buildUpcomingDueTaskCard(task))
+                          .toList(),
+                  ],
                 ),
               ),
-              const SizedBox(height: 24),
-              // Stat boxes in horizontal layout
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildStatCard(
-                      'Total Tasks',
-                      '$totalTasks',
-                      Icons.check_circle_outline,
-                      const Color(0xFF3F51B5), // Indigo-500
-                      _handleCompletedSegment,
-                      isActive: _selectedSegment == 1,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildStatCard(
-                      'Completed',
-                      '$completedTasks',
-                      Icons.check_circle,
-                      const Color(0xFF2E7D32), // Green-800
-                      _handleInprogressSegment,
-                      isActive: _selectedSegment == 2,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildStatCard(
-                      'In Progress',
-                      '$inProgressTasks',
-                      Icons.access_time,
-                      const Color(0xFFFBC02D), // Yellow-700
-                      _handlePrioritySegment,
-                      isActive: _selectedSegment == 0,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildStatCard(
-                      'High Priority',
-                      '$highPriorityTasks',
-                      Icons.error_outline,
-                      const Color(0xFFD32F2F), // Red-700
-                      _handleInprogressSegment,
-                      isActive: _selectedSegment == 2,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              // Upcoming Due Tasks Section
-              const SizedBox(height: 24),
-              const Text(
-                'Upcoming Due Tasks',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700, // Bold (700)
-                  color: Color(0xFF1A1A1A),
-                ),
-              ),
-              const SizedBox(height: 16),
-              if (allUpcomingTasksWithin7Days.isEmpty)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: const Color(0xFFE0E0E0), // Light Grey Border
-                      width: 1,
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.check_circle_outline,
-                        size: 48,
-                        color: const Color(0xFF10B981), // Green Checkmark
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        "You're all caught up!",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A1A1A),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'No upcoming tasks due within the next 7 days.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF757575),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          setState(() {
-                            _currentIndex = 1; // Switch to Tasks screen
-                          });
-                        },
-                        icon: const Icon(Icons.trending_up),
-                        label: const Text('View All Tasks'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF6366F1),
-                          foregroundColor: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              else
-                Column(
-                  children: allUpcomingTasksWithin7Days.map((task) => _buildUpcomingDueTaskCard(task)).toList(),
-                ),
-            ],
-          ),
+          ],
         ),
       ),
     );
@@ -818,6 +1023,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildUpcomingDueTaskCard(Task task) {
+    // Debug print to see task data
+    print('Building task card for: ${task.title} (ID: ${task.id})');
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
@@ -837,42 +1045,70 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             color: const Color(0xFF1E293B),
             decoration: task.isCompleted ? TextDecoration.lineThrough : null,
           ),
+          overflow: TextOverflow.ellipsis,
         ),
-        subtitle: Row(
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildPriorityPill(task.priority),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: Colors.grey.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                task.category,
-                style: const TextStyle(
-                  color: Color(0xFF64748B), // Slate Grey
-                  fontSize: 12,
-                ),
+            const SizedBox(height: 4),
+            Text(
+              task.description,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Color(0xFF64748B), // Slate Grey
               ),
             ),
-            if (task.dueDate != null) ...[
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.orange.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  'Due: ${_formatDate(task.dueDate!)}',
-                  style: const TextStyle(
-                    color: Color(0xFF64748B), // Slate Grey
-                    fontSize: 12,
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                _buildPriorityPill(task.priority),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            task.category,
+                            style: const TextStyle(
+                              color: Color(0xFF64748B), // Slate Grey
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (task.dueDate != null) ...[
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              'Due: ${_formatDate(task.dueDate!)}',
+                              style: const TextStyle(
+                                color: Color(0xFF64748B), // Slate Grey
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ],
         ),
         trailing: Row(
@@ -915,7 +1151,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
           ],
         ),
-        onTap: () => _toggleTask(task), // Clicking toggles completion
+        onTap: () => _toggleTask(task),
       ),
     );
   }
@@ -998,10 +1234,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   IconData _getTaskIcon(Task task) {
     if (task.isCompleted) {
       return Icons.check_circle;
-    } else if (task.dueDate != null && task.dueDate!.isBefore(DateTime.now())) {
-      return Icons.warning;
+    } else if (_getTaskStatus(task) == 'In Progress') {
+      return Icons.hourglass_top;
     } else {
-      return Icons.radio_button_unchecked;
+      return Icons.hourglass_empty;
     }
   }
 
@@ -1009,10 +1245,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Color _getTaskIconColor(Task task) {
     if (task.isCompleted) {
       return const Color(0xFF10B981); // Green for completed
-    } else if (task.dueDate != null && task.dueDate!.isBefore(DateTime.now())) {
-      return const Color(0xFFEF4444); // Red for overdue
+    } else if (_getTaskStatus(task) == 'In Progress') {
+      return const Color(0xFF4285F4); // Blue for in progress
     } else {
-      return const Color(0xFF94A3B8); // Gray for pending
+      return const Color(0xFFFFA000); // Amber for pending
     }
   }
 
@@ -1043,20 +1279,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           content: Text('Are you sure you want to delete "${task.title}"?'),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
               child: const Text('Cancel'),
+              onPressed: () => Navigator.of(context).pop(),
             ),
             TextButton(
+              child: const Text('Delete', style: TextStyle(color: Colors.red)),
               onPressed: () {
                 _deleteTask(task.id);
                 Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Task deleted')),
+                );
               },
-              style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFFEF4444),
-              ),
-              child: const Text('Delete'),
             ),
           ],
         );
@@ -1185,15 +1419,33 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => TaskCreationScreen(onSave: _addTask),
+            ),
+          );
+          _loadTasks();
+        },
+        backgroundColor: const Color(0xFF6366F1),
+        foregroundColor: Colors.white,
+        child: const Icon(Icons.add),
+      ),
     );
   }
 
   Widget _buildTeamsScreen() {
-    return const TeamsScreen();
+    return const Center(
+      child: Text('Teams Screen - Coming Soon'),
+    );
   }
 
   Widget _buildProfileScreen() {
-    return const ProfileScreen();
+    return const Center(
+      child: Text('Profile Screen - Coming Soon'),
+    );
   }
 
   @override

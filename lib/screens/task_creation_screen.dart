@@ -257,30 +257,75 @@ class _TaskCreationScreenState extends State<TaskCreationScreen> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Row(
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            flex: 2,
-                            child: ListTile(
-                              title: const Text('Due Date'),
-                              subtitle: _dueDate != null
-                                  ? Text(
-                                      '${_dueDate!.day}/${_dueDate!.month}/${_dueDate!.year}')
-                                  : const Text('Select date'),
-                              trailing: const Icon(Icons.calendar_today),
-                              onTap: _selectDueDate,
+                          const Text('Due Date',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 16),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.shade300),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(_dueDate != null
+                                    ? '${_dueDate!.day}/${_dueDate!.month}/${_dueDate!.year}'
+                                    : 'Select date'),
+                                const Icon(Icons.calendar_today),
+                              ],
                             ),
                           ),
-                          Expanded(
-                            flex: 1,
-                            child: ListTile(
-                              title: const Text('Time'),
-                              subtitle: _dueTime != null
-                                  ? Text(_dueTime!.format(context))
-                                  : const Text('Select time'),
-                              trailing: const Icon(Icons.access_time),
-                              onTap: _selectDueTime,
+                          const SizedBox(height: 12),
+                          const Text('Due Time',
+                              style: TextStyle(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 16),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.shade300),
+                              borderRadius: BorderRadius.circular(8),
                             ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(_dueTime != null
+                                    ? _dueTime!.format(context)
+                                    : 'Select time'),
+                                const Icon(Icons.access_time),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: _selectDueDate,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF6366F1),
+                                    foregroundColor: Colors.white,
+                                  ),
+                                  child: const Text('Select Date'),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: _selectDueTime,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF6366F1),
+                                    foregroundColor: Colors.white,
+                                  ),
+                                  child: const Text('Select Time'),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),

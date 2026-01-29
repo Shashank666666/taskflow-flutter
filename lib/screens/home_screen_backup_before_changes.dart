@@ -17,7 +17,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late TabController _tabController;
   List<Task> tasks = [];
   String filter = 'all'; // all, active, completed
-  int _currentIndex = 0; // 0: Dashboard, 1: Tasks, 2: Teams, 3: Profile
+  final int _currentIndex = 0; // 0: Dashboard, 1: Tasks, 2: Teams, 3: Profile
   int _selectedSegment = -1; // 0: high priority, 1: completed, 2: in progress
   String _userName = '';
 
@@ -135,9 +135,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
               child: Row(
                 children: [
-                  Text("👋🏻",
-                      style: const TextStyle(
-                          fontSize: 24, color: Color(0xFFFFCC4D))),
+                  const Text("👋🏻",
+                      style: TextStyle(fontSize: 24, color: Color(0xFFFFCC4D))),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -273,11 +272,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             color: isActive ? color : const Color(0xFFE2E8F0),
             width: 2,
           ),
-          boxShadow: [
+          boxShadow: const [
             BoxShadow(
-              color: const Color(0xFFE2E8F0),
+              color: Color(0xFFE2E8F0),
               blurRadius: 10,
-              offset: const Offset(0, 2),
+              offset: Offset(0, 2),
             ),
           ],
         ),
@@ -504,8 +503,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text("👋🏻",
-              style: const TextStyle(fontSize: 48, color: Color(0xFFFFCC4D))),
+          const Text("👋🏻",
+              style: TextStyle(fontSize: 48, color: Color(0xFFFFCC4D))),
           const SizedBox(height: 16),
           const Text(
             'No upcoming tasks',

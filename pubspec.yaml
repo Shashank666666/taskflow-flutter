@@ -13,8 +13,6 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.2
   shared_preferences: ^2.0.15
-  flutter_local_notifications: 13.0.0
-  timezone: ^0.9.4
   fl_chart: ^0.68.0
 
 dev_dependencies:

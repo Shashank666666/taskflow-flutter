@@ -39,12 +39,12 @@ class TaskStatusPieChart extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Task Status Overview",
+          const Text("Task Status Overview",
               style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                   color: Color(0xFF333333))),
-          Text("Distribution of tasks by status",
+          const Text("Distribution of tasks by status",
               style: TextStyle(
                   fontWeight: FontWeight.normal,
                   fontSize: 14,
@@ -55,7 +55,7 @@ class TaskStatusPieChart extends StatelessWidget {
               alignment: Alignment.center,
               children: [
                 CustomPaint(
-                  size: Size(180, 180),
+                  size: const Size(180, 180),
                   painter: PieChartPainter(
                     completedTasks: completedTasks,
                     inProgressTasks: inProgressTasks,
@@ -65,14 +65,14 @@ class TaskStatusPieChart extends StatelessWidget {
                 ),
                 // Labels Positioned Externally
                 if (inProgressTasks > 0)
-                  Positioned(
+                  const Positioned(
                       top: -10,
                       child: Text("In Progress: ",
                           style: TextStyle(
                               color: Color(0xFF4285F4),
                               fontWeight: FontWeight.bold))),
                 if (completedTasks > 0)
-                  Positioned(
+                  const Positioned(
                       right: -10,
                       top: 40,
                       child: Text("Completed: ",
@@ -80,7 +80,7 @@ class TaskStatusPieChart extends StatelessWidget {
                               color: Color(0xFF34A853),
                               fontWeight: FontWeight.bold))),
                 if (pendingTasks > 0)
-                  Positioned(
+                  const Positioned(
                       left: 10,
                       bottom: 10,
                       child: Text("Pending: ",
@@ -132,15 +132,15 @@ class PieChartPainter extends CustomPainter {
 
     // Draw Pending - starts at -pi/2 (top)
     if (pendingTasks > 0) {
-      canvas.drawArc(
-          rect, -pi / 2, pendingAngle, true, paint..color = Color(0xFFFFA500));
+      canvas.drawArc(rect, -pi / 2, pendingAngle, true,
+          paint..color = const Color(0xFFFFA500));
       canvas.drawArc(rect, -pi / 2, pendingAngle, true, borderPaint);
     }
 
     // Draw In Progress - starts after pending
     if (inProgressTasks > 0) {
       canvas.drawArc(rect, -pi / 2 + pendingAngle, inProgressAngle, true,
-          paint..color = Color(0xFF4285F4));
+          paint..color = const Color(0xFF4285F4));
       canvas.drawArc(
           rect, -pi / 2 + pendingAngle, inProgressAngle, true, borderPaint);
     }
@@ -148,7 +148,7 @@ class PieChartPainter extends CustomPainter {
     // Draw Completed - starts after pending and in progress
     if (completedTasks > 0) {
       canvas.drawArc(rect, -pi / 2 + pendingAngle + inProgressAngle,
-          completedAngle, true, paint..color = Color(0xFF34A853));
+          completedAngle, true, paint..color = const Color(0xFF34A853));
       canvas.drawArc(rect, -pi / 2 + pendingAngle + inProgressAngle,
           completedAngle, true, borderPaint);
     }

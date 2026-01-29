@@ -208,55 +208,42 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     for (var task in tasks) {
       if (task.dueDate != null) {
         // Check if task is due within 7 days from now
-        final daysUntilDue = task.dueDate!.difference(DateTime.now()).inDays;
-        if (daysUntilDue <= 7) {
-          // Due within 7 days
-          allUpcomingTasksWithin7Days
-              .add(task); // Add to the list for empty state check
+        final now = DateTime.now();
+        final dueDate = task.dueDate!;
+        final difference = dueDate.difference(now).inDays;
+
+        // Include tasks due within 7 days (including today)
+        if (difference >= 0 && difference <= 7) {
+          allUpcomingTasksWithin7Days.add(task);
+          // Only add non-completed tasks to the display list
           if (!task.isCompleted) {
-            // Only add non-completed tasks to the display list
             allFilteredTasks.add(task);
           }
         }
       }
     }
 
-    // Sort by priority first (High, then Medium, then Low), then by due date
+    // Sort tasks by priority importance (High > Medium > Low) and due date
     allFilteredTasks.sort((a, b) {
-      // Define priority order
-      int priorityOrder(String priority) {
-        switch (priority.toLowerCase()) {
-          case 'high':
-            return 1;
-          case 'medium':
-            return 2;
-          case 'low':
-            return 3;
-          default:
-            return 4;
-        }
-      }
-
-      int priorityComparison =
-          priorityOrder(a.priority) - priorityOrder(b.priority);
+      // First sort by priority importance
+      int priorityComparison = _comparePriority(a.priority, b.priority);
       if (priorityComparison != 0) {
         return priorityComparison;
       }
-
-      // If priorities are the same, sort by due date (earliest first)
+      // If priorities are equal, sort by due date (earlier first)
       if (a.dueDate != null && b.dueDate != null) {
         return a.dueDate!.compareTo(b.dueDate!);
-      } else if (a.dueDate != null) {
-        return -1; // a comes first if only a has a due date
-      } else if (b.dueDate != null) {
-        return 1; // b comes first if only b has a due date
       }
-
       return 0;
     });
 
-    // Take only the first 3 tasks
-    List<Task> filteredTasks = allFilteredTasks.take(3).toList();
+    // Limit to only 3 tasks
+    if (allFilteredTasks.length > 3) {
+      allFilteredTasks = allFilteredTasks.sublist(0, 3);
+    }
+
+    // Use the filtered tasks for display
+    allUpcomingTasksWithin7Days = allFilteredTasks;
 
     return Scaffold(
       appBar: AppBar(
@@ -343,6 +330,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       const Color(0xFF3F51B5), // Indigo-500
                       _handleCompletedSegment,
                       isActive: _selectedSegment == 1,
+                      totalTasks:
+                          totalTasks, // Pass totalTasks for percentage calculation
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -354,6 +343,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       const Color(0xFF2E7D32), // Green-800
                       _handleInprogressSegment,
                       isActive: _selectedSegment == 2,
+                      totalTasks:
+                          totalTasks, // Pass totalTasks for percentage calculation
                     ),
                   ),
                 ],
@@ -369,6 +360,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       const Color(0xFFFBC02D), // Yellow-700
                       _handlePrioritySegment,
                       isActive: _selectedSegment == 0,
+                      totalTasks:
+                          totalTasks, // Pass totalTasks for percentage calculation
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -379,7 +372,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       Icons.error_outline,
                       const Color(0xFFD32F2F), // Red-700
                       _handleInprogressSegment,
-                      isActive: _selectedSegment == 2,
+                      isActive: _selectedSegment == 3,
+                      totalTasks:
+                          totalTasks, // Pass totalTasks for percentage calculation
                     ),
                   ),
                 ],
@@ -387,13 +382,30 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               const SizedBox(height: 24),
               // Upcoming Due Tasks Section
               const SizedBox(height: 24),
-              const Text(
-                'Upcoming Due Tasks',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700, // Bold (700)
-                  color: Color(0xFF1A1A1A),
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Upcoming Due Tasks',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700, // Bold (700)
+                      color: Color(0xFF1A1A1A),
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      Icons.trending_up,
+                      color: const Color(0xFF6366F1), // Purple/Blue trend icon
+                      size: 24,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _currentIndex = 1; // Switch to Tasks screen
+                      });
+                    },
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
               if (allUpcomingTasksWithin7Days.isEmpty)
@@ -470,6 +482,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     Color color,
     VoidCallback? onTap, {
     bool isActive = false,
+    int? totalTasks, // Add total tasks parameter for percentage calculation
   }) {
     // Determine background color based on title
     Color backgroundColor;
@@ -483,6 +496,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       backgroundColor = const Color(0xFFEF4444); // Red
     } else {
       backgroundColor = Colors.white;
+    }
+
+    // Calculate percentage if totalTasks is provided and not zero
+    String percentageText = '';
+    if (totalTasks != null && totalTasks > 0) {
+      int countValue = int.tryParse(count) ?? 0;
+      double percentage = (countValue / totalTasks) * 100;
+      percentageText = '${percentage.toStringAsFixed(0)}%';
     }
 
     // Check if this is one of the cards that shouldn't be clickable
@@ -530,6 +551,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 color: color,
               ),
             ),
+            if (percentageText.isNotEmpty) ...[
+              const SizedBox(height: 2),
+              Text(
+                percentageText,
+                style: TextStyle(
+                  fontFamily: 'Roboto',
+                  fontSize: 12,
+                  color: color.withValues(alpha: 0.7),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
             const SizedBox(height: 4),
             Text(
               title,
@@ -785,6 +818,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     color: Color(0xFF333333),
                   ),
                 ),
+                if (task.description.isNotEmpty) ...[
+                  Text(
+                    task.description,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.normal,
+                      color: Color(0xFF757575),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
                 if (task.dueDate != null) ...[
                   Text(
                     _formatDateTime(task.dueDate!),
@@ -841,41 +886,61 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             decoration: task.isCompleted ? TextDecoration.lineThrough : null,
           ),
         ),
-        subtitle: Row(
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildPriorityPill(task.priority),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: Colors.grey.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                task.category,
+            const SizedBox(height: 4),
+            // Add description if it exists
+            if (task.description.isNotEmpty) ...[
+              Text(
+                task.description,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   color: Color(0xFF64748B), // Slate Grey
-                  fontSize: 12,
                 ),
               ),
-            ),
-            if (task.dueDate != null) ...[
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.orange.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  'Due: ${_formatDate(task.dueDate!)}',
-                  style: const TextStyle(
-                    color: Color(0xFF64748B), // Slate Grey
-                    fontSize: 12,
+              const SizedBox(height: 8),
+            ],
+            Row(
+              children: [
+                _buildPriorityPill(task.priority),
+                const SizedBox(width: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    task.category,
+                    style: const TextStyle(
+                      color: Color(0xFF64748B), // Slate Grey
+                      fontSize: 12,
+                    ),
                   ),
                 ),
-              ),
-            ],
+                if (task.dueDate != null) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      'Due: ${_formatDate(task.dueDate!)}',
+                      style: const TextStyle(
+                        color: Color(0xFF64748B), // Slate Grey
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ],
         ),
         trailing: Row(
@@ -1265,5 +1330,40 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             )
           : null,
     );
+  }
+
+  Widget _buildStatusLegend(String label, Color color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+
+  int _comparePriority(String priorityA, String priorityB) {
+    final priorityOrder = ['High', 'Medium', 'Low'];
+    final indexA = priorityOrder.indexOf(priorityA);
+    final indexB = priorityOrder.indexOf(priorityB);
+
+    if (indexA == -1) return 1; // If priorityA is not in the list, it's lower
+    if (indexB == -1) return -1; // If priorityB is not in the list, it's lower
+
+    return indexA.compareTo(indexB);
   }
 }

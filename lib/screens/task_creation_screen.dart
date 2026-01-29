@@ -227,14 +227,17 @@ class _TaskCreationScreenState extends State<TaskCreationScreen> {
               TextFormField(
                 controller: _descriptionController,
                 decoration: const InputDecoration(
-                  labelText: 'Description',
+                  labelText: 'Description *',
                   border: OutlineInputBorder(),
                   hintText: 'Enter task description',
                   alignLabelWithHint: true,
                 ),
                 maxLines: 4,
                 validator: (value) {
-                  if (value != null && value.length > 500) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a description';
+                  }
+                  if (value.length > 500) {
                     return 'Description is too long';
                   }
                   return null;

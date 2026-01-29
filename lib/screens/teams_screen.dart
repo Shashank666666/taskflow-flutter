@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'dart:convert';
-import 'package:taskflow_flutter/models/task.dart';
+import '../models/task.dart';
+import 'task_creation_screen.dart';
 
 // Team model class
 class Team {
@@ -90,18 +93,14 @@ class _TeamsScreenState extends State<TeamsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Teams'),
+        title: const Text('Teams'),
         backgroundColor: const Color(0xFF6366F1),
         foregroundColor: Colors.white,
-        elevation: 0,
         actions: [
+          // QR Scanner Icon
           IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: _showSearchDialog,
-          ),
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: _showCreateTeamDialog,
+            icon: const Icon(Icons.qr_code_scanner),
+            onPressed: () => _scanQRCode(context),
           ),
         ],
       ),
@@ -444,6 +443,103 @@ class _TeamsScreenState extends State<TeamsScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Team created successfully!')),
+    );
+  }
+
+  void _scanQRCode(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        height: MediaQuery.of(context).size.height * 0.8,
+        child: Column(
+          children: [
+            const Text(
+              'Scan QR Code',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1E293B),
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Scan a QR code to join a team',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Color(0xFF64748B),
+              ),
+            ),
+            const SizedBox(height: 30),
+            // QR Code Scanner with proper sizing
+            Expanded(
+              child: MobileScanner(
+                fit: BoxFit.contain,
+                onDetect: (capture) {
+                  final code = capture.barcodes.first.rawValue;
+                  if (code != null) {
+                    try {
+                      final data = jsonDecode(code);
+                      if (data['action'] == 'join_team') {
+                        _joinTeam(data['teamId'], data['teamName']);
+                        Navigator.pop(context);
+                      }
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Invalid QR code format'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  }
+                },
+              ),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6366F1),
+                foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+              ),
+              child: const Text('Cancel'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _joinTeam(String teamId, String teamName) async {
+    final newTeam = Team(
+      id: teamId,
+      name: teamName,
+      description: '',
+      members: ['currentUser'], // Add current user
+      taskIds: [],
+      createdBy: 'currentUser',
+      createdAt: DateTime.now(),
+    );
+
+    setState(() {
+      _teams.add(newTeam);
+    });
+
+    // Save to SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    final teamsJson = json.encode(_teams.map((team) => team.toJson()).toList());
+    await prefs.setString('teams', teamsJson);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Joined team successfully!')),
     );
   }
 }
@@ -972,95 +1068,96 @@ class _TeamDetailsScreenState extends State<TeamDetailsScreen> {
   }
 
   void _showQRCodeScanner(BuildContext context) {
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Scan QR Code to Join Team'),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        height: 400,
+        child: Column(
           children: [
-            Icon(
-              Icons.qr_code_scanner,
-              size: 80,
-              color: Color(0xFF6366F1),
+            const Text(
+              'Team Invitation',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1E293B),
+              ),
             ),
-            SizedBox(height: 16),
-            Text(
-              'This feature allows team members to scan a QR code to join this team instantly.',
+            const SizedBox(height: 20),
+            const Text(
+              'Share this QR code with others to invite them to join your team',
               textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Color(0xFF64748B),
+              ),
+            ),
+            const SizedBox(height: 30),
+            // QR Code
+            QrImageView(
+              data: jsonEncode({
+                'teamId': widget.team.id,
+                'teamName': widget.team.name,
+                'action': 'join_team'
+              }),
+              version: QrVersions.auto,
+              size: 200.0,
+              gapless: false,
+            ),
+            const SizedBox(height: 20),
+            Text(
+              widget.team.name,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF1E293B),
+              ),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6366F1),
+                foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+              ),
+              child: const Text('Close'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              // TODO: Implement actual QR code scanning functionality
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content:
-                        Text('QR Code scanning would be implemented here')),
-              );
-            },
-            child: const Text('Scan QR'),
-          ),
-        ],
       ),
     );
   }
 
   void _showAddTaskDialog(BuildContext context) {
-    final titleController = TextEditingController();
-    final descriptionController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add New Task to Team'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: titleController,
-              decoration: const InputDecoration(
-                labelText: 'Task Title',
-                border: OutlineInputBorder(),
+    // Navigate to the main task creation screen with team context
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TaskCreationScreen(
+          onSave: (task) {
+            // Add task to current team
+            _addTaskToTeam(task);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Task added to team successfully!'),
+                backgroundColor: Colors.green,
               ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Description',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 2,
-            ),
-          ],
+            );
+          },
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (titleController.text.isNotEmpty) {
-                // TODO: Implement actual task creation and assignment to team
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Task would be added to team')),
-                );
-              }
-            },
-            child: const Text('Add Task'),
-          ),
-        ],
       ),
     );
+  }
+
+  void _addTaskToTeam(Task task) {
+    // This would add the task to the current team
+    // Implementation depends on your data structure
+    print('Adding task ${task.title} to team');
   }
 }

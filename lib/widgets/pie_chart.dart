@@ -2,7 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import '../models/task.dart';
 
-class TaskPieChart extends StatelessWidget {
+class TaskPieChart extends StatefulWidget {
   final int completedTasks;
   final int inProgressTasks;
   final int pendingTasks;
@@ -11,63 +11,75 @@ class TaskPieChart extends StatelessWidget {
   final List<Task> tasks;
 
   const TaskPieChart({
-    super.key,
+    Key? key,
     required this.completedTasks,
     required this.inProgressTasks,
     required this.pendingTasks,
     required this.highPriorityTasks,
     required this.totalTasks,
     required this.tasks,
-  });
+  }) : super(key: key);
 
   @override
+  _TaskPieChartState createState() => _TaskPieChartState();
+}
+
+class _TaskPieChartState extends State<TaskPieChart> {
+  @override
   Widget build(BuildContext context) {
+    // Calculate actual counts
+    final int completedCount = widget.completedTasks;
+    final int inProgressCount = widget.inProgressTasks;
+    final int highPriorityCount = widget.highPriorityTasks;
+    final int totalTasks = widget.totalTasks;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFFFF),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF000000).withOpacity(0.05),
-            offset: const Offset(0, 4),
-            blurRadius: 12,
-            spreadRadius: 0,
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            "Task Status Overview",
+            'Task Status Overview',
             style: TextStyle(
+              fontSize: 18,
               fontWeight: FontWeight.bold,
-              fontSize: 16,
-              color: Color(0xFF333333),
+              color: Color(0xFF1E293B),
             ),
           ),
-          const SizedBox(height: 4),
-          const Text(
-            "Distribution of tasks by status",
-            style: TextStyle(
-              fontWeight: FontWeight.normal,
-              fontSize: 14,
-              color: Color(0xFF757575),
-            ),
+          const SizedBox(height: 16),
+          // Status labels at the top with percentages and counts
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildStatusLegendWithStats('Completed', const Color(0xFF10B981),
+                  completedCount, totalTasks),
+              _buildStatusLegendWithStats('In Progress',
+                  const Color(0xFFF59E0B), inProgressCount, totalTasks),
+              _buildStatusLegendWithStats('High Priority',
+                  const Color(0xFFEF4444), highPriorityCount, totalTasks),
+            ],
           ),
-          const SizedBox(height: 24),
-          const SizedBox(height: 10),
+          const SizedBox(height: 20),
           Center(
             child: SizedBox(
-              height: 220,
-              width: 220,
+              height: 200,
+              width: 200,
               child: PieChart(
                 PieChartData(
                   sectionsSpace: 2,
                   centerSpaceRadius: 0,
-                  sections: _getSections(),
+                  sections: _getSectionsWithoutLabels(),
                 ),
               ),
             ),
@@ -77,114 +89,95 @@ class TaskPieChart extends StatelessWidget {
     );
   }
 
-  List<PieChartSectionData> _getSections() {
-    // Use dynamic data from widget parameters
-    final int highPriorityCount = highPriorityTasks;
-    final int mediumPriorityCount = tasks
-        .where((task) =>
-            task != null && !task.isCompleted && task.priority == 'Medium')
-        .length;
-    final int lowPriorityCount = tasks
-        .where((task) =>
-            task != null && !task.isCompleted && task.priority == 'Low')
-        .length;
-    final int completedCount = completedTasks;
-    final int total = totalTasks > 0 ? totalTasks : 1; // Avoid division by zero
-
-    return [
-      // High Priority - Red
-      if (highPriorityCount > 0)
-        PieChartSectionData(
-          color: const Color(0xFFEF4444),
-          value: highPriorityCount.toDouble(),
-          title:
-              'High Priority\n${highPriorityCount}\n(${(highPriorityCount / total * 100).round()}%)',
-          radius: 60,
-          titleStyle: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87,
+  Widget _buildStatusLegendWithStats(
+      String label, Color color, int count, int total) {
+    final double percentage = total > 0 ? (count / total) * 100 : 0;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
           ),
-          titlePositionPercentageOffset: 0.7,
-          showTitle: true,
         ),
-      // Medium Priority - Blue
-      if (mediumPriorityCount > 0)
-        PieChartSectionData(
-          color: const Color(0xFF3B82F6),
-          value: mediumPriorityCount.toDouble(),
-          title:
-              'Medium\n${mediumPriorityCount}\n(${(mediumPriorityCount / total * 100).round()}%)',
-          radius: 60,
-          titleStyle: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87,
+        const SizedBox(height: 6),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF333333),
           ),
-          titlePositionPercentageOffset: 0.7,
-          showTitle: true,
         ),
-      // Low Priority - Amber
-      if (lowPriorityCount > 0)
-        PieChartSectionData(
-          color: const Color(0xFFF59E0B),
-          value: lowPriorityCount.toDouble(),
-          title:
-              'Low\n${lowPriorityCount}\n(${(lowPriorityCount / total * 100).round()}%)',
-          radius: 60,
-          titleStyle: const TextStyle(
+        Text(
+          '${percentage.toStringAsFixed(1)}% ($count)',
+          style: const TextStyle(
             fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87,
+            fontWeight: FontWeight.normal,
+            color: Color(0xFF757575),
           ),
-          titlePositionPercentageOffset: 0.7,
-          showTitle: true,
         ),
-      // Completed - Green
-      if (completedCount > 0)
-        PieChartSectionData(
-          color: const Color(0xFF10B981),
-          value: completedCount.toDouble(),
-          title:
-              'Completed\n${completedCount}\n(${(completedCount / total * 100).round()}%)',
-          radius: 60,
-          titleStyle: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87,
-          ),
-          titlePositionPercentageOffset: 0.7,
-          showTitle: true,
-        ),
-    ];
+      ],
+    );
   }
 
-  Widget _buildIconForSegment(int index) {
-    switch (index) {
-      case 0: // Pending
-        return const Icon(
-          Icons.hourglass_empty,
-          color: Color(0xFFFFA000),
-          size: 24,
-        );
-      case 1: // In Progress
-        return const Icon(
-          Icons.hourglass_top,
-          color: Color(0xFF4285F4),
-          size: 24,
-        );
-      case 2: // Completed
-        return const Icon(
-          Icons.check_circle,
-          color: Color(0xFF0F9D58),
-          size: 24,
-        );
-      default:
-        return const Icon(
-          Icons.help_outline,
-          color: Colors.grey,
-          size: 24,
-        );
+  List<PieChartSectionData> _getSectionsWithoutLabels() {
+    // Use dynamic data from widget parameters
+    final int highPriorityCount = widget.highPriorityTasks;
+    final int completedCount = widget.completedTasks;
+    final int inProgressCount = widget.inProgressTasks;
+
+    // Only include non-zero sections
+    List<PieChartSectionData> sections = [];
+
+    if (completedCount > 0) {
+      sections.add(
+        PieChartSectionData(
+          color: const Color(0xFF10B981), // Green for completed
+          value: completedCount.toDouble(),
+          radius: 60,
+          showTitle: false,
+        ),
+      );
     }
+
+    if (inProgressCount > 0) {
+      sections.add(
+        PieChartSectionData(
+          color: const Color(0xFFF59E0B), // Yellow for in progress
+          value: inProgressCount.toDouble(),
+          radius: 60,
+          showTitle: false,
+        ),
+      );
+    }
+
+    if (highPriorityCount > 0) {
+      sections.add(
+        PieChartSectionData(
+          color: const Color(0xFFEF4444), // Red for high priority
+          value: highPriorityCount.toDouble(),
+          radius: 60,
+          showTitle: false,
+        ),
+      );
+    }
+
+    // If no tasks, show a gray section
+    if (sections.isEmpty) {
+      sections.add(
+        PieChartSectionData(
+          color: const Color(0xFF9CA3AF), // Gray for empty
+          value: 1.0,
+          radius: 60,
+          showTitle: false,
+        ),
+      );
+    }
+
+    return sections;
   }
 }
